@@ -1,0 +1,9 @@
+Flask
+pandas
+openpyxl
+requests
+gunicorn
+setuptools
+yfinance
+lxml
+html5lib

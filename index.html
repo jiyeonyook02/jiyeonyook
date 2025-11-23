@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>한국 주식 종목 검색기</title>
+
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#111634;
+      --glass: rgba(255,255,255,0.07);
+      --glass2: rgba(255,255,255,0.10);
+      --line: rgba(255,255,255,0.12);
+      --text:#e6e9f5;
+      --muted:#aab0c3;
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --accent3:#f59e0b;
+      --danger:#ef4444;
+      --radius:18px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      font-family:-apple-system, system-ui, sans-serif;
+      background:
+        radial-gradient(900px 520px at 10% -10%, #1d4ed8 0%, transparent 60%),
+        radial-gradient(900px 520px at 110% 0%, #7c3aed 0%, transparent 60%),
+        linear-gradient(165deg, var(--bg1), var(--bg2));
+    }
+
+    .wrap{
+      max-width:1100px;
+      margin:22px auto;
+      padding:14px;
+      display:grid;
+      gap:14px;
+    }
+
+    .card{
+      background:var(--glass);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      backdrop-filter: blur(12px);
+      box-shadow:0 12px 30px rgba(0,0,0,0.35);
+    }
+
+    header.card{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:18px 18px;
+    }
+    h1{
+      margin:0;
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:-0.2px;
+    }
+    .meta{
+      font-size:13px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:7px;height:7px;border-radius:50%;
+      background:var(--accent2);
+      box-shadow:0 0 10px var(--accent2);
+    }
+
+    /* --- Controls Layout --- */
+    .controls{
+      padding:14px;
+      display:grid;
+      gap:12px;
+    }
+
+    .controls-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+    }
+    @media (min-width: 860px){
+      .controls-grid{
+        grid-template-columns: 1fr 1fr;
+        gap:12px;
+      }
+    }
+
+    .group{
+      background:var(--glass2);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      display:grid;
+      gap:10px;
+    }
+    .group-title{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:0.2px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      text-transform:uppercase;
+    }
+
+    .pill-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      justify-content:center; /* 가운데 정렬 */
+    }
+
+    /* --- Radio / Checkbox Pills --- */
+    .pill{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.06);
+      cursor:pointer;
+      user-select:none;
+      transition:0.2s ease;
+      font-size:14px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .pill:hover{ transform:translateY(-1px); background:rgba(255,255,255,0.09); }
+
+    .pill input{
+      appearance:none;
+      width:16px;height:16px;border-radius:999px;
+      border:2px solid rgba(255,255,255,0.55);
+      display:grid;place-items:center;
+      margin:0;
+      background:transparent;
+      transition:0.2s;
+    }
+    .pill input::after{
+      content:"";
+      width:8px;height:8px;border-radius:999px;
+      transform:scale(0);
+      background:white;
+      transition:0.15s;
+    }
+    .pill input:checked{
+      border-color:transparent;
+      background:linear-gradient(135deg, var(--accent), #2563eb);
+      box-shadow:0 0 0 3px rgba(124,58,237,0.22);
+    }
+    .pill input:checked::after{ transform:scale(1); }
+
+    /* 체크박스는 사각+체크로 */
+    .pill input[type="checkbox"]{
+      border-radius:6px;
+    }
+    .pill input[type="checkbox"]::after{
+      width:9px;height:9px;border-radius:2px;
+      clip-path: polygon(14% 44%, 0 65%, 45% 100%, 100% 16%, 80% 0, 43% 62%);
+    }
+
+    /* --- Buttons --- */
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:center;
+    }
+    .btn{
+      border:none;
+      cursor:pointer;
+      font-weight:800;
+      padding:11px 14px;
+      border-radius:12px;
+      color:white;
+      transition:0.25s ease;
+      min-width:130px;
+      letter-spacing:-0.2px;
+    }
+    .btn:hover{ transform:translateY(-2px); }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--accent), #2563eb);
+      box-shadow:0 10px 22px rgba(124,58,237,0.35);
+    }
+    .btn-success{
+      background:linear-gradient(135deg, #10b981, #22c55e);
+      box-shadow:0 10px 22px rgba(34,197,94,0.35);
+    }
+    .btn-warm{
+      background:linear-gradient(135deg, #f59e0b, #f97316);
+      box-shadow:0 10px 22px rgba(249,115,22,0.35);
+    }
+
+    /* --- Stats --- */
+    .stats{
+      padding:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:space-between;
+      align-items:center;
+      font-size:14px;
+    }
+    .badge{
+      padding:6px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid var(--line);
+      font-weight:700;
+    }
+
+    /* --- Table --- */
+    .table-card{ overflow:auto; }
+    table{
+      width:100%;
+      min-width:900px;
+      border-collapse:separate;
+      border-spacing:0;
+      font-size:14px;
+    }
+    th{
+      position:sticky; top:0; z-index:2;
+      background:rgba(11,16,32,0.95);
+      padding:10px 8px;
+      font-weight:800;
+      border-bottom:1px solid var(--line);
+      text-align:right;
+    }
+    th:first-child, th:nth-child(2){ text-align:left; }
+
+    td{
+      padding:9px 8px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      background:rgba(255,255,255,0.02);
+      text-align:right;
+      font-variant-numeric:tabular-nums;
+    }
+    td.left{ text-align:left; font-weight:700; }
+    tr:hover td{ background:rgba(124,58,237,0.09); }
+
+    .link-btn{
+      text-decoration:none;
+      padding:6px 9px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.08);
+      color:var(--text);
+      font-size:12px; font-weight:800;
+      white-space:nowrap;
+      display:inline-flex; align-items:center; gap:4px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header class="card">
+    <h1>📈 한국 주식 종목 검색기</h1>
+    <div class="meta">
+      <span class="dot"></span>
+      <span id="baseDate">데이터 기준일: -</span>
+    </div>
+  </header>
+
+  <!-- ✅ 덜 나열되게 2단 그룹 + 가운데 정렬 -->
+  <section class="card controls">
+    <div class="controls-grid">
+
+      <!-- 투자 성향 -->
+      <div class="group">
+        <div class="group-title">INVESTOR TYPE</div>
+        <div class="pill-row">
+          <label class="pill">
+            <input type="radio" name="t" value="1">
+            안정추구형
+          </label>
+          <label class="pill">
+            <input type="radio" name="t" value="2" checked>
+            안정성장형
+          </label>
+          <label class="pill">
+            <input type="radio" name="t" value="3">
+            적극성장형
+          </label>
+        </div>
+      </div>
+
+      <!-- 추가 필터 -->
+      <div class="group">
+        <div class="group-title">EXTRA FILTERS</div>
+        <div class="pill-row">
+          <label class="pill">
+            <input type="checkbox" id="momCut" checked>
+            모멘텀 하드컷
+          </label>
+          <label class="pill">
+            <input type="checkbox" id="miniF" checked>
+            미니 F-score
+          </label>
+          <label class="pill">
+            <input type="checkbox" id="evEbitda" checked>
+            EV/EBITDA 밸류
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 액션 버튼 줄 -->
+    <div class="actions">
+      <button id="btnRec" class="btn btn-warm">추천 조합</button>
+      <button id="btn" class="btn btn-primary">종목 검색</button>
+      <button id="btnExcel" class="btn btn-success">엑셀 다운로드</button>
+    </div>
+  </section>
+
+  <section class="card stats">
+    <span class="badge" id="summary">총 0개 종목</span>
+    <span class="badge" id="ruleInfo">필터: -</span>
+  </section>
+
+  <section class="card table-card">
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </section>
+
+</div>
+
+<script>
+/* ====== 기존 JS 그대로 유지, 버튼/체크박스 id만 연동 ====== */
+const API = "/api/stocks";
+
+function toNum(x){
+  const n = Number(x);
+  return Number.isFinite(n) ? n : NaN;
+}
+function fmt(n, digit=2){
+  if(!Number.isFinite(n)) return "";
+  return n.toLocaleString(undefined, {maximumFractionDigits:digit});
+}
+function quantile(arr, q){
+  const a = arr.filter(Number.isFinite).sort((x,y)=>x-y);
+  if(!a.length) return NaN;
+  const pos = (a.length -1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  return a[base+1] != null ? a[base] + rest*(a[base+1]-a[base]) : a[base];
+}
+
+function filter(rows, type){
+  let PER_max, PBR_max, ROE_min, DY_min, CAP_min, ruleLabel, sort_key;
+  const caps = rows.map(r=>r["시가총액"]);
+
+  if(type==="1"){
+    PER_max=12; PBR_max=1.2; ROE_min=5; DY_min=3.0;
+    CAP_min = quantile(caps,0.8);
+    sort_key = "배당수익률";
+    ruleLabel = "PER<12, PBR<1.2, ROE>5, DY>3, 시총 상위20%";
+  } else if(type==="3"){
+    PER_max=50; PBR_max=5; ROE_min=15; DY_min=0;
+    CAP_min=0;
+    sort_key = "ROE";
+    ruleLabel = "PER<50, PBR<5, ROE>15";
+  } else {
+    PER_max=20; PBR_max=2; ROE_min=10; DY_min=1.5;
+    CAP_min = quantile(caps, 0.5);
+    sort_key = "ROE";
+    ruleLabel = "PER<20, PBR<2, ROE>10, DY>1.5, 시총 상위50%";
+  }
+
+  const out = rows.filter(r =>
+    r.PER < PER_max &&
+    r.PBR < PBR_max &&
+    r.ROE > ROE_min &&
+    r["배당수익률"] > DY_min &&
+    r["시가총액"] > CAP_min
+  );
+
+  out.sort((a,b)=> (b[sort_key]??0)-(a[sort_key]??0));
+  return {out, ruleLabel};
+}
+
+function makeLinks(name){
+  const q = encodeURIComponent(name);
+  return {
+    price:`https://search.naver.com/search.naver?query=${q}+주가`,
+    naver:`https://search.naver.com/search.naver?where=news&query=${q}`,
+    daum:`https://search.daum.net/search?w=news&q=${q}`
+  };
+}
+
+function render(rows){
+  const head = ["종목명","종목코드","PER","PBR","ROE","배당수익률","시가총액(억원)"];
+  document.getElementById("thead").innerHTML =
+    head.map(c=>`<th>${c}</th>`).join("") +
+    "<th>주가</th><th>네이버</th><th>다음</th>";
+
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  rows.forEach(r=>{
+    const links = makeLinks(r["종목명"]);
+    const tr = document.createElement("tr");
+
+    head.forEach(c=>{
+      let v = r[c];
+      if(["PER","PBR","ROE","배당수익률"].includes(c)) v = fmt(v);
+      if(c==="시가총액(억원)") v = fmt(v,0);
+
+      const td = document.createElement("td");
+      td.className = (c==="종목명"||c==="종목코드") ? "left" : "";
+      td.textContent = v ?? "";
+      tr.append(td);
+    });
+
+    tr.insertAdjacentHTML("beforeend",`
+      <td><a class='link-btn' target='_blank' href='${links.price}'>주가</a></td>
+      <td><a class='link-btn' target='_blank' href='${links.naver}'>뉴스</a></td>
+      <td><a class='link-btn' target='_blank' href='${links.daum}'>다음</a></td>
+    `);
+
+    tbody.append(tr);
+  });
+}
+
+async function init(){
+  const res = await fetch(API);
+  const data = await res.json();
+  document.getElementById("baseDate").textContent =
+    `데이터 기준일: ${data.baseDate}`;
+  window.raw = data;
+}
+init();
+
+/* ✅ 검색 버튼 */
+document.getElementById("btn").addEventListener("click",()=>{
+  const type = document.querySelector("input[name=t]:checked").value;
+
+  const rows = window.raw.data.map(r=>({
+    ...r,
+    PER: toNum(r.PER),
+    PBR: toNum(r.PBR),
+    ROE: toNum(r.ROE),
+    "배당수익률": toNum(r["배당수익률"]),
+    "시가총액": toNum(r["시가총액"]),
+    "시가총액(억원)": toNum(r["시가총액(억원)"]),
+  }));
+
+  const {out, ruleLabel} = filter(rows, type);
+  document.getElementById("summary").textContent = `총 ${out.length}개 종목`;
+  document.getElementById("ruleInfo").textContent = `필터: ${ruleLabel}`;
+  render(out);
+});
+
+/* ✅ 아래 두 버튼은 UI만 붙여둠. 
+   네가 서버에 다운로드 엔드포인트 만들면 여기만 연결하면 됨 */
+document.getElementById("btnExcel").addEventListener("click",()=>{
+  alert("엑셀 다운로드는 서버 저장/다운로드 API 붙이면 동작하게 연결할게.");
+});
+document.getElementById("btnRec").addEventListener("click",()=>{
+  alert("추천 조합 로직 붙이면 여기서 자동 preset 적용하게 할게.");
+});
+</script>
+
+</body>
+</html>
